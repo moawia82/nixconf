@@ -1,0 +1,24 @@
+# Secrets that should NOT be committed
+secrets/age-key.txt
+*.key
+*.pem
+
+# Build artifacts
+result
+result-*
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.tmp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+
