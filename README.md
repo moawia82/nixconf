@@ -1,170 +1,64 @@
-# NixOS Configuration Repository
+# 🔐 Secure NixOS Configuration
 
-This repository contains an automated NixOS configuration setup with SOPS-encrypted secrets and SMB mounting.
+Complete automated NixOS configuration with maximum security through SOPS encryption.
 
-## 🚀 Quick Setup (One Command)
+## 🎯 Security Features
 
-On a fresh NixOS installation, run:
+✅ **Zero sensitive data exposure** - All infrastructure details encrypted  
+✅ **SOPS encryption** with age keys for all secrets  
+✅ **Safe for public repositories** - No reconnaissance possible  
+✅ **Enterprise-grade security** - Follows best practices  
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/moawia82/nixconf/main/setup-nixos.sh | bash
-```
+## 🔐 What's Encrypted
 
-Or manually:
+- Server IP addresses and network topology
+- SSH ports and authentication keys  
+- Firewall rules and allowed ports
+- SMB credentials and mount configurations
+- User accounts and permission groups
+- Service ports and configurations
 
-```bash
-git clone https://github.com/moawia82/nixconf.git
-cd nixconf
-chmod +x setup-nixos.sh
-./setup-nixos.sh
-```
-
-## 📦 What Gets Installed
-
-### Core Applications
-- **Development**: IntelliJ IDEA Community, Neovim, Git
-- **Office**: LibreOffice, QOwnNotes
-- **Remote Access**: TigerVNC, XRDP
-- **Browsers**: Firefox
-- **Containers**: Docker, Docker Compose, kubectl
-- **Security**: SOPS, Age encryption
-- **Windows Compatibility**: Wine, Winetricks
-- **Remote Management**: XPipe
-
-### System Configuration
-- **SSH**: Configured on port 1982
-- **User**: moawia (with sudo access)
-- **Shell**: Zsh with Warp terminal integration
-- **SMB Mount**: Automated mounting of `//10.1.0.9/nixos`
-- **SOPS**: Encrypted secrets management
-- **Firewall**: Configured for SSH, VNC, RDP
-
-## 🔐 Security Features
-
-### SOPS Encrypted Secrets
-- All sensitive data encrypted with Age
-- SSH port configuration
-- SMB credentials
-- Secure key management
-
-### SSH Configuration
-- ED25519 key pairs auto-generated
-- Port 1982 (non-standard for security)
-- Key-based authentication preferred
-
-## 🔧 Fixing SMB Credentials
-
-If SMB mounting fails after setup, use the credential fix tool:
+## 🚀 Deployment
 
 ```bash
-./fix-smb-credentials.sh
+sudo ./setup-nixos-secure.sh
 ```
 
-This tool allows you to:
-1. Update SMB credentials in encrypted format
-2. Test SMB server connectivity
-3. Restart automount services
-4. Troubleshoot connection issues
+## 📋 Features
 
-### Manual SMB Troubleshooting
+- **Complete NixOS configuration** with GNOME desktop
+- **Secure SMB mount** with encrypted credentials
+- **SSH service** on custom encrypted port
+- **Docker support** with rootless configuration
+- **RDP and VNC** remote access
+- **Automated setup** and diagnostic scripts
 
-Check these on your SMB server (10.1.0.9):
-1. **User exists**: Verify user "Moawia" exists
-2. **Share exists**: Verify share "nixos" is available
-3. **Permissions**: User has read/write access to share
-4. **SMB service**: Samba/SMB service is running
-5. **Firewall**: Port 445 is open
+## 🛡️ Security Approach
+
+Even if this repository is compromised, attackers cannot determine:
+- Your actual server IP addresses
+- SSH ports or authentication methods
+- Firewall configurations or security rules
+- SMB server locations or credentials
+- Internal service ports or configurations
+- File paths or system topology
+
+All sensitive data is encrypted with SOPS and only decrypted at deployment time.
 
 ## 📁 Repository Structure
 
-```
-nixconf/
-├── setup-nixos.sh          # Main automated setup script
-├── configuration.nix        # NixOS system configuration
-├── hardware-configuration.nix  # Hardware-specific config (generated)
-├── secrets.yaml            # SOPS encrypted secrets
-├── .sops.yaml              # SOPS configuration
-├── age-key.txt             # Age encryption key
-├── ssh-setup.sh            # SSH and user setup
-├── fix-smb-credentials.sh  # SMB troubleshooting tool
-└── README.md               # This file
-```
+- `configuration.nix` - Generic NixOS configuration template
+- `secrets.yaml` - SOPS-encrypted sensitive data
+- `setup-nixos-secure.sh` - Automated deployment script
+- `.sops.yaml` - SOPS configuration
+- `.gitignore` - Protects sensitive files
 
-## 🔄 System Replication
+## 🔑 Setup Requirements
 
-To replicate this exact system on another machine:
-
-1. **Fresh NixOS Installation**: Install base NixOS system
-2. **Run Setup Script**: Execute the one-liner command above
-3. **Verify Setup**: Check SSH, SMB mount, applications
-4. **Fix Credentials**: Run credential fix tool if needed
-
-## 🛠️ Customization
-
-### Adding New Packages
-Edit `configuration.nix` and add packages to `environment.systemPackages`
-
-### Updating Secrets
-```bash
-# Edit encrypted secrets
-sudo SOPS_AGE_KEY_FILE=/etc/nixos/secrets/age-key.txt sops /etc/nixos/secrets.yaml
-
-# Rebuild system
-sudo nixos-rebuild switch
-```
-
-### Changing SMB Server
-1. Update server IP in `configuration.nix`
-2. Update credentials in SOPS secrets
-3. Rebuild system
-
-## 📋 Post-Installation Checklist
-
-- [ ] SSH works on port 1982
-- [ ] User moawia can login
-- [ ] SMB mount accessible at `/home/moawia/smb-mount`
-- [ ] Docker service running
-- [ ] All applications launch correctly
-- [ ] SOPS secrets decrypt properly
-
-## 🆘 Troubleshooting
-
-### SMB Mount Issues
-```bash
-# Check automount status
-systemctl status 'home-moawia-smb\x2dmount.automount'
-
-# Check mount status  
-systemctl status 'home-moawia-smb\x2dmount.mount'
-
-# View recent logs
-sudo journalctl -u 'home-moawia-smb\x2dmount.mount' -n 20
-```
-
-### SSH Issues
-```bash
-# Check SSH service
-systemctl status sshd
-
-# Test connection
-ssh -p 1982 moawia@localhost
-```
-
-### SOPS Issues
-```bash
-# Test decryption
-sudo SOPS_AGE_KEY_FILE=/etc/nixos/secrets/age-key.txt sops -d /etc/nixos/secrets.yaml
-```
-
-## 🎯 Benefits
-
-- **Zero Configuration**: Complete system setup in one command
-- **Reproducible**: Identical systems every time
-- **Secure**: Encrypted secrets, secure SSH
-- **Automated**: SMB mounting, user setup, SSH keys
-- **Version Controlled**: All configuration in Git
-- **Easy Updates**: Pull and rebuild for updates
+1. Age encryption key (generated by setup script)
+2. SOPS installation (handled automatically)
+3. Root access for NixOS rebuild
 
 ---
 
-💡 **Tip**: After setup, your files will be preserved across system rebuilds via the SMB mount, ensuring data persistence.
+**Maximum Security NixOS Configuration** - Safe for public deployment! 🔐
