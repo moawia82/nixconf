@@ -1,0 +1,16 @@
+# NEVER commit private keys or decrypted secrets
+age-key.txt
+smb-credentials
+*.backup*
+/tmp/
+hardware-configuration.nix
+
+# Temporary files
+secrets-plain.yaml
+*.tmp
+*.log
+/build/
+
+# System-specific files
+.DS_Store
+Thumbs.db
