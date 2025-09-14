@@ -2,15 +2,25 @@
 age-key.txt
 smb-credentials
 *.backup*
-/tmp/
-hardware-configuration.nix
+configuration.nix.backup
+
+# Scripts that may contain sensitive data
+fix-smb-credentials.sh
+secure-setup.sh
+smb-diagnostics.sh
+update-username.sh
+setup-nixos.sh
 
 # Temporary files
 secrets-plain.yaml
+secrets-plain-temp.yaml
+secrets-complete.yaml
+/tmp/
 *.tmp
 *.log
 /build/
 
-# System-specific files
+# System-specific files  
+hardware-configuration.nix
 .DS_Store
 Thumbs.db
