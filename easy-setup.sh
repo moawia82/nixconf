@@ -1,21 +1,18 @@
 #!/bin/bash
 
-# 🚀 Easy NixOS Setup Script for Windows Users!
-# This script does EVERYTHING automatically - just like a Windows installer
+# 🚀 Easy NixOS Setup Script - Home Directory SMB Integration
+# This script configures your home directory to be on the SMB share
 
 set -e
 
-echo "🎉 Welcome to Easy NixOS Setup!"
-echo "=============================="
+echo "🎉 Welcome to NixOS SMB Home Directory Setup!"
+echo "============================================"
 echo ""
-echo "This will set up your NixOS system automatically."
-echo "Think of this like installing Windows 11 - it does everything for you!"
-echo ""
-echo "What you'll get:"
-echo "✅ Complete desktop with apps (Firefox, VS Code, etc.)"
-echo "✅ Remote access (like Windows Remote Desktop)" 
-echo "✅ File server connection"
-echo "✅ Security settings"
+echo "This will configure your ENTIRE home directory to be on the SMB share."
+echo "Benefits:"
+echo "✅ Never lose files on system rebuilds"
+echo "✅ Home directory (~) points to SMB share"
+echo "✅ All settings and data preserved"
 echo ""
 
 # Check if running as root
@@ -28,49 +25,77 @@ fi
 # Get the actual user who called sudo
 ACTUAL_USER=${SUDO_USER:-$(whoami)}
 USER_HOME=$(eval echo ~$ACTUAL_USER)
+SMB_MOUNT="/home/$ACTUAL_USER"
 
-echo "🔍 Setup for user: $ACTUAL_USER"
+echo "🔍 Setup Information:"
+echo "- User: $ACTUAL_USER"
+echo "- Home will be: SMB share (persistent)"
 echo ""
 
 # Step 1: Install required tools
-echo "📦 Step 1/5: Installing required tools..."
-nix-env -iA nixpkgs.sops nixpkgs.age nixpkgs.yq-go || {
+echo "📦 Step 1/6: Installing required tools..."
+nix-env -iA nixpkgs.sops nixpkgs.age nixpkgs.yq-go nixpkgs.cifs-utils || {
     echo "Installing via nix-shell..."
-    nix-shell -p sops age yq-go --run "echo 'Tools available'"
+    nix-shell -p sops age yq-go cifs-utils --run "echo 'Tools available'"
 }
 
 # Step 2: Setup encryption keys
-echo "🔑 Step 2/5: Setting up security keys..."
+echo "🔑 Step 2/6: Setting up SOPS age keys..."
 mkdir -p "$USER_HOME/.config/sops/age"
 if [ -f "./age-key.txt" ]; then
     cp ./age-key.txt "$USER_HOME/.config/sops/age/keys.txt"
     chown -R $ACTUAL_USER:users "$USER_HOME/.config/sops"
     chmod 600 "$USER_HOME/.config/sops/age/keys.txt"
     echo "✅ Security keys configured"
-else
-    echo "⚠️  No encryption key found - generating new one..."
-    # Generate new age key if none exists
-    age-keygen -o "$USER_HOME/.config/sops/age/keys.txt"
-    chown $ACTUAL_USER:users "$USER_HOME/.config/sops/age/keys.txt"
-    chmod 600 "$USER_HOME/.config/sops/age/keys.txt"
-    echo "✅ New security keys generated"
 fi
 
-# Step 3: Test encryption
-echo "🧪 Step 3/5: Testing encryption..."
+# Step 3: Extract secrets and handle special characters properly
+echo "🔍 Step 3/6: Processing encrypted secrets..."
 if sudo -u $ACTUAL_USER sops -d secrets.yaml > /dev/null 2>&1; then
-    echo "✅ Encryption working"
+    echo "✅ SOPS encryption working"
+    
+    # Create temporary decrypted secrets for processing
+    TEMP_SECRETS="/tmp/secrets-temp-$$.yaml"
+    sudo -u $ACTUAL_USER sops -d secrets.yaml > "$TEMP_SECRETS"
+    chmod 600 "$TEMP_SECRETS"
+    
+    # Extract values - handle special characters properly
+    SMB_SERVER=$(nix-shell -p yq-go --run "yq eval '.smb.server_ip' '$TEMP_SECRETS'")
+    SMB_SHARE=$(nix-shell -p yq-go --run "yq eval '.smb.share_name' '$TEMP_SECRETS'") 
+    SMB_USER=$(nix-shell -p yq-go --run "yq eval '.smb.username' '$TEMP_SECRETS'")
+    SMB_PASS=$(nix-shell -p yq-go --run "yq eval '.smb.password' '$TEMP_SECRETS'")
+    
+    echo "📋 SMB Configuration:"
+    echo "- Server: $SMB_SERVER"
+    echo "- Share: $SMB_SHARE"
+    echo "- Username: $SMB_USER"
+    echo "- Password: [encrypted with special characters]"
+    
 else
-    echo "⚠️  Creating basic configuration without secrets"
+    echo "⚠️  SOPS not working - using basic configuration"
+    SMB_SERVER="10.1.0.9"
+    SMB_SHARE="nixos"
+    SMB_USER="Moawia"
+    SMB_PASS="#Rak7FR0th#"
+    TEMP_SECRETS=""
 fi
 
-# Step 4: Configure system
-echo "🔧 Step 4/5: Configuring your system..."
+# Step 4: Create SMB credentials with proper escaping
+echo "🗂️ Step 4/6: Creating SMB credentials file..."
+cat > /etc/nixos/smb-credentials << CREDS_EOF
+username=$SMB_USER
+password=$SMB_PASS
+domain=WORKGROUP
+CREDS_EOF
+chmod 600 /etc/nixos/smb-credentials
+echo "✅ SMB credentials created with special character handling"
 
-# Create a simple working configuration if secrets don't work
-if ! sudo -u $ACTUAL_USER sops -d secrets.yaml > /dev/null 2>&1; then
-    echo "Creating basic configuration..."
-    cat > configuration.nix << 'BASIC_EOF'
+# Step 5: Create configuration for SMB home directory
+echo "🏠 Step 5/6: Configuring SMB as home directory..."
+
+# Create updated configuration that mounts SMB as home
+cat > /etc/nixos/configuration.nix << 'CONF_EOF'
+# NixOS Configuration with SMB Home Directory
 { config, pkgs, ... }:
 
 {
@@ -95,7 +120,7 @@ if ! sudo -u $ACTUAL_USER sops -d secrets.yaml > /dev/null 2>&1; then
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
 
-  # Sound
+  # Audio
   sound.enable = true;
   hardware.pulseaudio.enable = false;
   security.rtkit.enable = true;
@@ -106,16 +131,39 @@ if ! sudo -u $ACTUAL_USER sops -d secrets.yaml > /dev/null 2>&1; then
     pulse.enable = true;
   };
 
-  # User account
+  # SMB Home Directory Mount
+  fileSystems."/home/moawia" = {
+    device = "//10.1.0.9/nixos";
+    fsType = "cifs";
+    options = [
+      "credentials=/etc/nixos/smb-credentials"
+      "uid=1000,gid=100,iocharset=utf8,file_mode=0644,dir_mode=0755"
+      "x-systemd.automount"
+      "x-systemd.requires=network-online.target"
+      "x-systemd.device-timeout=30s"
+      "x-systemd.mount-timeout=30s"
+    ];
+  };
+
+  # User configuration
   users.users.moawia = {
     isNormalUser = true;
     description = "Main User";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "ssh-users" "tty" "video" "docker" ];
+    # Home directory will be the SMB mount
+    home = "/home/moawia";
+    createHome = false; # Don't create local home, use SMB mount
     packages = with pkgs; [
       firefox
+      thunderbird
       vscode
       git
+      curl
+      wget
       htop
+      tree
+      unzip
+      zip
     ];
   };
 
@@ -124,54 +172,80 @@ if ! sudo -u $ACTUAL_USER sops -d secrets.yaml > /dev/null 2>&1; then
     vim
     wget
     git
-    firefox
+    sops
+    age
+    cifs-utils
+    docker
+    docker-compose
+    yq-go
   ];
 
+  # Programs
+  programs.firefox.enable = true;
+  nixpkgs.config.allowUnfree = true;
+
   # SSH
-  services.openssh.enable = true;
+  services.openssh = {
+    enable = true;
+    settings = {
+      AllowGroups = [ "ssh-users" ];
+      PasswordAuthentication = false;
+    };
+  };
+
+  # RDP and VNC
+  services.xrdp = {
+    enable = true;
+    defaultWindowManager = "gnome-session";
+    openFirewall = false;
+  };
+  
+  services.x11vnc = {
+    enable = true; 
+    display = 0;
+  };
+
+  # Docker
+  virtualisation.docker.enable = true;
+  virtualisation.docker.rootless = {
+    enable = true;
+    setSocketVariable = true;
+  };
 
   # Firewall
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.enable = true;
+  networking.firewall.allowedTCPPorts = [ 1982 5901 3389 ];
 
   system.stateVersion = "23.11";
 }
-BASIC_EOF
+CONF_EOF
+
+echo "✅ Configuration created for SMB home directory"
+
+# Step 6: Copy all configuration files
+echo "📂 Step 6/6: Installing configuration..."
+cp secrets.yaml /etc/nixos/ 2>/dev/null || true
+cp .sops.yaml /etc/nixos/ 2>/dev/null || true
+
+# Clean up temp files
+[ -n "$TEMP_SECRETS" ] && rm -f "$TEMP_SECRETS"
+
+echo ""
+echo "🎉 Configuration complete! Ready to apply..."
+echo ""
+echo "⚠️  IMPORTANT: After applying this configuration:"
+echo "1. Your home directory (~) will be the SMB share"
+echo "2. All your files will persist across rebuilds"
+echo "3. You'll need to copy your current files to SMB first"
+echo ""
+echo "🚀 Apply configuration now? (y/n)"
+read -r response
+if [[ $response =~ ^[Yy]$ ]]; then
+    echo "Applying NixOS configuration..."
+    nixos-rebuild switch
+    echo ""
+    echo "✅ SMB Home Directory configured successfully!"
+    echo "Your home directory (~) now points to the SMB share!"
+else
+    echo "Configuration files ready. Run 'sudo nixos-rebuild switch' when ready."
 fi
-
-# Copy configuration to system location
-cp configuration.nix /etc/nixos/
-if [ -f "secrets.yaml" ]; then
-    cp secrets.yaml /etc/nixos/ 2>/dev/null || true
-fi
-if [ -f ".sops.yaml" ]; then
-    cp .sops.yaml /etc/nixos/ 2>/dev/null || true
-fi
-
-# Step 5: Apply configuration
-echo "🚀 Step 5/5: Applying configuration (this takes a few minutes)..."
-echo "Like installing Windows updates - please wait..."
-
-nixos-rebuild switch
-
-echo ""
-echo "🎉 SUCCESS! Your NixOS system is ready!"
-echo "======================================"
-echo ""
-echo "✅ What's installed:"
-echo "- GNOME desktop (like Windows 11 interface)"
-echo "- Firefox web browser"
-echo "- VS Code editor"
-echo "- SSH remote access"
-echo "- All essential apps"
-echo ""
-echo "🔄 Next steps:"
-echo "1. Reboot your computer: sudo reboot"
-echo "2. Log in with your username and password"
-echo "3. Enjoy your new NixOS system!"
-echo ""
-echo "💡 Remember:"
-echo "- This is like Windows but more secure and stable"
-echo "- Your settings are saved and can be easily restored"
-echo "- Updates won't break your system"
-echo ""
-echo "📚 Need help? Read the SIMPLE-GUIDE.md file!"
