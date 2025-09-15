@@ -1,7 +1,29 @@
-# Secrets that should NOT be committed
+# NEVER commit private keys or decrypted secrets
+age-key.txt
 secrets/age-key.txt
+smb-credentials
 *.key
 *.pem
+
+# Configuration backups
+*.backup*
+configuration.nix.backup
+
+# Scripts that may contain sensitive data  
+fix-smb-credentials.sh
+secure-setup.sh
+smb-diagnostics.sh
+update-username.sh
+setup-nixos.sh
+
+# Temporary files
+secrets-plain.yaml
+secrets-plain-temp.yaml
+secrets-complete.yaml
+/tmp/
+*.tmp
+*.log
+/build/
 
 # Build artifacts
 result
@@ -11,14 +33,9 @@ result-*
 .vscode/
 .idea/
 *.swp
-*.tmp
 *~
 
-# OS files
+# System-specific files
+hardware-configuration.nix
 .DS_Store
 Thumbs.db
-
-# Backup files
-*.backup
-*.bak
-
