@@ -23,31 +23,32 @@
     openssl
   ];
 
-  # VNC Server Configuration using x11vnc as a systemd service
-  systemd.services.x11vnc = {
+  # VNC Server Configuration - User service that starts automatically
+  systemd.user.services.x11vnc = {
     enable = true;
     description = "X11VNC Server for remote access";
-    after = [ "display-manager.service" "graphical-session.target" ];
-    wants = [ "display-manager.service" ];
-    wantedBy = [ "multi-user.target" ];
+    after = [ "graphical-session.target" ];
+    wantedBy = [ "default.target" ];
     
     serviceConfig = {
-      Type = "simple";
-      User = "moawia";
-      Group = "users";
+      Type = "exec";
       Restart = "always";
-      RestartSec = "5";
+      RestartSec = "10";
       
-      ExecStartPre = "${pkgs.bash}/bin/bash -c 'while ! ${pkgs.xorg.xdpyinfo}/bin/xdpyinfo -display :0 >/dev/null 2>&1; do echo Waiting for X server...; sleep 2; done'";
-      
-      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 -forever -shared -rfbport 5900 -passwd '#Rak7FR0th#' -noxdamage -noxfixes -noxcomposite -nomodtweak -noxrecord";
+      # Direct start - x11vnc will handle retries if X server isn't ready
+      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :10 -forever -shared -rfbport 5900 -passwd '#Rak7FR0th#' -noxdamage -wait 5";
       
       Environment = [
-        "DISPLAY=:0"
+        "DISPLAY=:10"
         "HOME=/home/moawia"
       ];
     };
   };
+
+  # Enable lingering for the user so user services start on boot
+  systemd.tmpfiles.rules = [
+    "f /var/lib/systemd/linger/moawia 0644 root root - -"
+  ];
 
   # Audio configuration
   hardware.pulseaudio.enable = false;

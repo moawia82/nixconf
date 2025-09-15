@@ -28,25 +28,25 @@
     # Do not suspend when lid is closed
     powertop.enable = false;
     # Prevent automatic suspension
-    cpuFreqGovernor = " performance\;
- };
+    cpuFreqGovernor = "performance";
+  };
 
- # Prevent ACPI sleep events
- boot.kernelParams = [ 
- \acpi_sleep=off\ 
- \apm=off\
- ];
+  # Prevent ACPI sleep events
+  boot.kernelParams = [ 
+    "acpi_sleep=off" 
+    "apm=off"
+  ];
 
- # Services to ensure 24/7 operation
- systemd.services.prevent-sleep = {
- enable = true;
- description = \Prevent system sleep - 24/7 server operation\;
- wantedBy = [ \multi-user.target\ ];
- serviceConfig = {
- Type = \simple\;
- ExecStart = \/bin/sh -c while true; do echo prevent-sleep > /dev/null; sleep 300; done \;
- Restart = \always\;
- RestartSec = \10\;
- };
- };
+  # Services to ensure 24/7 operation
+  systemd.services.prevent-sleep = {
+    enable = true;
+    description = "Prevent system sleep - 24/7 server operation";
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "/bin/sh -c 'while true; do echo prevent-sleep > /dev/null; sleep 300; done'";
+      Restart = "always";
+      RestartSec = "10";
+    };
+  };
 }
