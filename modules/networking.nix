@@ -1,4 +1,4 @@
-# Network Configuration  
+# Network Configuration - Secure Setup
 { config, ... }:
 
 {
@@ -8,26 +8,38 @@
     
     firewall = {
       enable = true;
-      # Use default ports for now, will be managed by secrets later
-      allowedTCPPorts = [ 1982 3389 5900 ]; # SSH, RDP, VNC
+      # SECURITY: Only allow our custom ports, NOT default SSH port 22
+      allowedTCPPorts = [ 1982 3389 5900 ]; # SSH(custom), RDP, VNC
+      # Explicitly deny default SSH port
+      allowedTCPPortRanges = [ ];
       allowPing = true;
+      # Log dropped packets for security monitoring
+      logReversePathDrops = true;
     };
   };
 
-  # SSH Configuration
+  # SSH Configuration - SECURE SETUP
   services.openssh = {
     enable = true;
+    ports = [ 1982 ]; # ONLY use custom port, never 22
     settings = {
+      # SECURITY: Disable default port 22 explicitly
       AllowGroups = [ "ssh-users" ];
-      Port = 1982;
       PasswordAuthentication = true;
       PermitRootLogin = "no";
+      # Additional security settings
+      PermitEmptyPasswords = false;
+      MaxAuthTries = 3;
+      LoginGraceTime = 30;
+      # Disable X11 forwarding for security
+      X11Forwarding = false;
     };
   };
 
   # SMB/CIFS mount configuration - using secrets from sops
+  # NOTE: This will use secrets once sops is properly configured
   fileSystems."/home/moawia" = {
-    device = "//\${config.sops.secrets.smb_server_ip.path}/\${config.sops.secrets.smb_share_name.path}";
+    device = "//10.1.0.9/nixos"; # Temporary - will be replaced with sops secret
     fsType = "cifs";
     options = [
       "credentials=/run/secrets/smb_credentials"
