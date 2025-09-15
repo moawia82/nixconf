@@ -1,60 +1,57 @@
-# NixOS Remote Access Configuration
+# 🐧 NixOS Configuration for Windows Users
 
-This repository contains a secure, organized NixOS configuration for a 24/7 remote access server with RDP and VNC support.
+Welcome! This repository contains a complete NixOS configuration designed specifically for users transitioning from Windows to Linux.
 
-## Structure
+## 🎯 What This Configuration Provides
 
-`
-nixos-config/
-├── flake.nix                 # Main flake configuration
-├── modules/                  # Modular NixOS configurations
-│   ├── base-system.nix      # Basic system configuration
-│   ├── hardware-configuration.nix # Hardware-specific settings
-│   ├── networking.nix       # Network and firewall configuration
-│   ├── power-management.nix # 24/7 operation settings
-│   ├── secrets.nix          # Sops secrets configuration
-│   ├── services.nix         # RDP/VNC service configuration
-│   └── users.nix            # User management
-├── secrets/                 # Encrypted secrets (sops)
-│   ├── secrets.yaml        # Encrypted configuration values
-│   └── age-key.txt         # Age encryption key (private)
-├── docs/                   # Documentation
-│   └── README.md          # This file
-└── scripts/               # Utility scripts
-    └── deploy.sh         # Deployment script
-`
+- **🖥️ Remote Desktop (RDP)** - Access your NixOS desktop from Windows
+- **🔍 VNC Server** - Cross-platform remote desktop access
+- **🔒 Secure SSH** - Remote terminal access on custom port
+- **💤 Power Management** - Prevents system sleep/hibernation
+- **🛡️ Firewall Protection** - Only necessary ports open
+- **🏠 SMB Home Integration** - Your files from Windows network share
 
-## Features
+## 📁 Repository Structure
 
-- **Remote Access**: RDP (3389) and VNC (5900) servers
-- **24/7 Operation**: Comprehensive power management preventing sleep
-- **Secure Configuration**: All secrets managed with sops-nix
-- **Modular Structure**: Clean, organized, and maintainable
-- **SMB Integration**: Network home directory support
+```
+├── docs/           # Documentation (you are here!)
+├── scripts/        # Setup and maintenance scripts  
+├── nixos/          # NixOS configuration files
+│   ├── modules/    # Modular configuration components
+│   └── secrets/    # Encrypted secrets (SOPS)
+└── .gitignore      # Security - prevents committing secrets
+```
 
-## Security Features
+## 🚀 Quick Start
 
-- All passwords, IPs, and sensitive data encrypted with sops
-- No hardcoded secrets in configuration files
-- Firewall properly configured
-- Secure VNC with SSL support
+1. **Boot NixOS** on your target machine
+2. **Run setup script**: `sudo ./scripts/setup.sh`
+3. **Connect remotely**:
+   - **RDP**: Use Windows Remote Desktop to connect
+   - **VNC**: Use any VNC client (RealVNC, TigerVNC, etc.)
+   - **SSH**: Use PuTTY or Windows Terminal
 
-## Deployment
+## 🔧 Connection Details
 
-`ash
-# Initialize flake
-nix flake update
+After setup, connect to your NixOS machine:
 
-# Test the configuration
-sudo nixos-rebuild test --flake .#nixos
+- **RDP Port**: 3389 (Windows Remote Desktop compatible)
+- **VNC Port**: 5900 (Cross-platform remote desktop)  
+- **SSH Port**: 1982 (Secure terminal access)
+- **Default Port 22**: Disabled for security
 
-# Deploy permanently
-sudo nixos-rebuild switch --flake .#nixos
-`
+## 🆘 Need Help?
 
-## Remote Access
+- Check `docs/TROUBLESHOOTING.md` for common issues
+- All sensitive data is encrypted and secure
+- Configuration is version-controlled and backed up
 
-- **RDP**: Connect to port 3389 using any RDP client
-- **VNC**: Connect to port 5900 using VNC client with SSL support
-- **SSH**: Port 1982 for administrative access
+## 🛡️ Security Features
 
+- **No hardcoded passwords** - All secrets encrypted with SOPS
+- **Custom SSH port** - Default port 22 disabled
+- **Firewall enabled** - Only necessary ports open
+- **Power management** - System stays online for remote access
+
+---
+*This configuration is optimized for users coming from Windows environments*

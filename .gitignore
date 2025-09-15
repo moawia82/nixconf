@@ -1,41 +1,67 @@
-# NEVER commit private keys or decrypted secrets
-age-key.txt
+# 🛡️ SECURITY - NEVER commit these files
+
+# SOPS and encryption keys
 secrets/age-key.txt
-smb-credentials
+secrets/key.txt
 *.key
 *.pem
+age-key.txt
 
-# Configuration backups
+# Decrypted secrets (SOPS creates these temporarily)
+secrets/secrets.yaml
+secrets/*-plain.yaml
+secrets/*-decrypted.yaml
+
+# SMB and network credentials
+smb-credentials
+*credentials*
+*.password
+
+# User passwords and sensitive config
+user-passwords.txt
+*.passwd
+
+# Temporary and backup files with potential secrets
 *.backup*
-configuration.nix.backup
-
-# Scripts that may contain sensitive data  
-fix-smb-credentials.sh
-secure-setup.sh
-smb-diagnostics.sh
-update-username.sh
-setup-nixos.sh
-
-# Temporary files
-secrets-plain.yaml
-secrets-plain-temp.yaml
-secrets-complete.yaml
-/tmp/
 *.tmp
 *.log
-/build/
+*-temp*
+configuration.nix.backup
 
-# Build artifacts
+# Scripts that might contain sensitive data
+fix-*.sh
+secure-*.sh
+smb-diagnostics.sh
+update-*.sh
+
+# Build and system artifacts
 result
 result-*
+/build/
+/tmp/
 
-# Editor files
+# Hardware-specific files (contain system details)
+hardware-configuration.nix
+
+# Editor and IDE files
 .vscode/
 .idea/
 *.swp
+*.swo
 *~
+.vim/
 
-# System-specific files
-hardware-configuration.nix
+# OS-specific files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Git-related
+*.orig
+*.rej
+
+# Nix-specific
+.direnv/
+
+# 📝 NOTE: Only commit encrypted secrets (secrets-template.yaml is OK)
+# The secrets/secrets-template.yaml file is safe to commit as it contains no real secrets

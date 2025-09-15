@@ -1,8 +1,0 @@
-keys:
-  - &age_key age1239s90rvmn2r7t6cyy8ahpc3xn0cwhg9mdn2s63l5qw46lptfgms9dye59
-
-creation_rules:
-  - path_regex: \.ya?ml$
-    key_groups:
-    - age:
-      - *age_key
